@@ -13,7 +13,7 @@ COPY pom.xml .
 COPY src src
 
 # Ejecuta Maven para construir el proyecto
-RUN chmod +x ./mvnw && ./mvnw -B -DskipTests clean install
+RUN chmod +x ./mvnw && ./mvnw -X -B -DskipTests clean install
 
 # Expone el puerto en el que corre la aplicación
 EXPOSE 8080
