@@ -1,25 +1,30 @@
-# Usa una imagen base de OpenJDK 17 slim
-FROM openjdk:17-slim
+# Fase de construcción con JDK y Maven
+FROM eclipse-temurin:17-jdk-alpine as builder
 
-# Instala Maven
-RUN apt-get update && apt-get install -y maven
-
-# Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copia el archivo Maven Wrapper y el pom.xml
-COPY mvnw . 
+# Copia solo los archivos necesarios para descargar dependencias
+COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Copia el código fuente
-COPY src src
+# Instala git y bash (requeridos para Maven Wrapper en Alpine)
+RUN apk add --no-cache git bash
 
-# Asegura que los permisos sean correctos y ejecuta Maven para construir el proyecto
-RUN chmod +x mvnw && ./mvnw -X -B -DskipTests clean install
+# Descarga dependencias y construye el proyecto
+RUN chmod +x mvnw && \
+    ./mvnw -B dependency:go-offline && \
+    ./mvnw -B -DskipTests clean package
 
-# Expone el puerto en el que corre la aplicación
+# Fase final con JRE mínimo
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# Copia el JAR desde la fase de construcción
+COPY --from=builder /app/target/*.jar app.jar
+
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
-CMD ["./mvnw", "spring-boot:run"]
+# Ejecuta el JAR directamente (mejor para producción)
+CMD ["java", "-jar", "app.jar"]
