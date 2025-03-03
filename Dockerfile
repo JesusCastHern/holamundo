@@ -1,30 +1,31 @@
-# Fase de construcción con JDK y Maven
+# Fase de construcción
 FROM eclipse-temurin:17-jdk-alpine as builder
 
 WORKDIR /app
 
-# Copia solo los archivos necesarios para descargar dependencias
+# Instala dependencias críticas para Alpine
+RUN apk add --no-cache bash git openssh
+
+# Copia solo los archivos necesarios para resolver dependencias primero
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Instala git y bash (requeridos para Maven Wrapper en Alpine)
-RUN apk add --no-cache git bash
-
-# Descarga dependencias y construye el proyecto
+# Descarga dependencias y plugins (etapa separada para caché)
 RUN chmod +x mvnw && \
-    ./mvnw -B dependency:go-offline && \
-    ./mvnw -B -DskipTests clean package
+    ./mvnw -B dependency:resolve-plugins dependency:go-offline
 
-# Fase final con JRE mínimo
+# Copia el código fuente
+COPY src src
+
+# Construye el proyecto
+RUN ./mvnw -B -DskipTests clean package
+
+# Fase de producción
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
-
-# Copia el JAR desde la fase de construcción
 COPY --from=builder /app/target/*.jar app.jar
 
 EXPOSE 8080
-
-# Ejecuta el JAR directamente (mejor para producción)
 CMD ["java", "-jar", "app.jar"]
