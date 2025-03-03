@@ -1,11 +1,14 @@
-# Usa una imagen base de OpenJDK con Maven preinstalado
-FROM maven:3.8.6-openjdk-17-slim
+# Usa una imagen base de OpenJDK 17 slim
+FROM openjdk:17-slim
+
+# Instala Maven
+RUN apt-get update && apt-get install -y maven
 
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
 # Copia el archivo Maven Wrapper y el pom.xml
-COPY mvnw .
+COPY mvnw . 
 COPY .mvn .mvn
 COPY pom.xml .
 
