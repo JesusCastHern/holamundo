@@ -1,5 +1,5 @@
-# Usa una imagen base de Java
-FROM openjdk:17-jdk-slim
+# Usa una imagen base de OpenJDK con Maven preinstalado
+FROM maven:3.8.6-openjdk-17-slim
 
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
@@ -12,8 +12,8 @@ COPY pom.xml .
 # Copia el código fuente
 COPY src src
 
-# Ejecuta Maven para construir el proyecto
-RUN chmod +x ./mvnw && ./mvnw -X -B -DskipTests clean install
+# Asegura que los permisos sean correctos y ejecuta Maven para construir el proyecto
+RUN chmod +x mvnw && ./mvnw -X -B -DskipTests clean install
 
 # Expone el puerto en el que corre la aplicación
 EXPOSE 8080
